@@ -1,7 +1,33 @@
-// Make dashboard editable
+
+// SAFE EDITING (FIXED PROPERLY)
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector(".page").contentEditable = true;
+
+    enableEditing();
 });
+
+function enableEditing() {
+
+    document.querySelectorAll(".page *").forEach(el => {
+
+        // ❌ lock quick cards (keep links working)
+        if (el.closest(".quick-card")) {
+            el.contentEditable = false;
+            return;
+        }
+
+        // ❌ lock any explicitly non-editable sections (NEW FIX)
+        if (el.closest(".no-edit")) {
+            el.contentEditable = false;
+            return;
+        }
+
+        // ❌ keep buttons + links functional
+        if (el.tagName === "A" || el.tagName === "BUTTON") return;
+
+        el.contentEditable = true;
+    });
+}
+
 // SAVE VERSION
 function saveCopy() {
 
@@ -42,7 +68,6 @@ function loadVersion() {
     input.onchange = function (e) {
 
         const file = e.target.files[0];
-
         if (!file) return;
 
         const reader = new FileReader();
@@ -51,46 +76,52 @@ function loadVersion() {
 
             const data = JSON.parse(reader.result);
 
-            document.querySelector(".page").innerHTML =
-                data.html;
+            document.querySelector(".page").innerHTML = data.html;
 
-  // re-enable editing after loading
-document.querySelector(".page").contentEditable = true;
-
+            // re-enable editing after load
+            enableEditing();
         };
 
         reader.readAsText(file);
-
     };
 
     input.click();
 }
 
 
-// EXPORT PDF
+// EXPORT BACKGROUND FIX
+function prepareExportBackground() {
+    const page = document.querySelector(".page");
+    page.style.background = "#12002e";
+}
+
+
+// EXPORT PDF (STABLE WORKING VERSION)
 function exportPDF() {
+
+    prepareExportBackground();
 
     const element = document.querySelector(".page");
 
-    const opt = {
+    html2pdf().set({
         margin: 0,
-        filename: "meetup.pdf",
+        filename: "Spectrum-Youth-Club.pdf",
+
         image: {
             type: "jpeg",
             quality: 1
         },
+
         html2canvas: {
             scale: 2,
+            useCORS: true,
             backgroundColor: "#12002e"
         },
-        jsPDF: {
-    unit: "px",
-    format: [1200, element.scrollHeight + 200]
-        }
-    };
 
-    html2pdf()
-        .set(opt)
-        .from(element)
-        .save();
+        jsPDF: {
+            unit: "px",
+            format: [960, element.scrollHeight],
+            orientation: "portrait"
+        }
+    }).from(element).save();
 }
