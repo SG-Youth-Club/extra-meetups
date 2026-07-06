@@ -1,34 +1,68 @@
 
-// SAFE EDITING (FIXED PROPERLY)
-document.addEventListener("DOMContentLoaded", () => {
+// ===============================
+// EDIT MODE
+// ===============================
 
-    enableEditing();
+let editMode = true;
+
+document.addEventListener("DOMContentLoaded", () => {
+    setEditMode(true);
 });
 
-function enableEditing() {
+// toggle button
+function toggleEditMode() {
+    setEditMode(!editMode);
+}
+
+function setEditMode(state) {
+    editMode = state;
+
+    document.body.classList.toggle("editing", editMode);
 
     document.querySelectorAll(".page *").forEach(el => {
 
-        // ❌ lock quick cards (keep links working)
-        if (el.closest(".quick-card")) {
-            el.contentEditable = false;
-            return;
-        }
+        // never edit toolbar
+        if (el.closest(".toolbar")) return;
 
-        // ❌ lock any explicitly non-editable sections (NEW FIX)
-        if (el.closest(".no-edit")) {
-            el.contentEditable = false;
-            return;
-        }
-
-        // ❌ keep buttons + links functional
+        // never edit links/buttons
         if (el.tagName === "A" || el.tagName === "BUTTON") return;
 
-        el.contentEditable = true;
+        // let venue system handle its own text
+        if (el.closest(".venue-section")) return;
+
+        el.contentEditable = editMode;
     });
 }
 
-// SAVE VERSION
+// ===============================
+// VENUE SYNC (WORKS WITH YOUR HTML)
+// ===============================
+
+function syncVenueName() {
+    const venueSection = document.querySelector(".venue-section");
+    if (!venueSection) return;
+
+    const text = venueSection.querySelector("p");
+    const link = venueSection.querySelector(".venue-link");
+
+    if (!text || !link) return;
+
+    const name = text.innerText.trim();
+
+    link.textContent = name.length ? name : "Open Map";
+}
+
+// live typing sync
+document.addEventListener("input", (e) => {
+    if (e.target.closest(".venue-section")) {
+        syncVenueName();
+    }
+});
+
+// ===============================
+// SAVE
+// ===============================
+
 function saveCopy() {
 
     const page = document.querySelector(".page");
@@ -37,31 +71,29 @@ function saveCopy() {
         html: page.innerHTML
     };
 
-    const blob = new Blob(
-        [JSON.stringify(data)],
-        { type: "application/json" }
-    );
+    const blob = new Blob([JSON.stringify(data)], {
+        type: "application/json"
+    });
 
     const a = document.createElement("a");
-
     a.href = URL.createObjectURL(blob);
 
     const filename =
         prompt("Enter file name:", "Meeting1") || "Dashboard";
 
     a.download = filename + ".dashboard";
-
     a.click();
 
     URL.revokeObjectURL(a.href);
 }
 
+// ===============================
+// LOAD (FIXED + RELIABLE)
+// ===============================
 
-// LOAD VERSION
 function loadVersion() {
 
     const input = document.createElement("input");
-
     input.type = "file";
     input.accept = ".dashboard";
 
@@ -78,8 +110,11 @@ function loadVersion() {
 
             document.querySelector(".page").innerHTML = data.html;
 
-            // re-enable editing after load
-            enableEditing();
+            // IMPORTANT: rebind after DOM rebuild
+            setTimeout(() => {
+                setEditMode(true);
+                syncVenueName();
+            }, 0);
         };
 
         reader.readAsText(file);
@@ -88,15 +123,14 @@ function loadVersion() {
     input.click();
 }
 
+// ===============================
+// PDF EXPORT
+// ===============================
 
-// EXPORT BACKGROUND FIX
 function prepareExportBackground() {
-    const page = document.querySelector(".page");
-    page.style.background = "#12002e";
+    document.querySelector(".page").style.background = "#12002e";
 }
 
-
-// EXPORT PDF (STABLE WORKING VERSION)
 function exportPDF() {
 
     prepareExportBackground();
@@ -106,18 +140,12 @@ function exportPDF() {
     html2pdf().set({
         margin: 0,
         filename: "Spectrum-Youth-Club.pdf",
-
-        image: {
-            type: "jpeg",
-            quality: 1
-        },
-
+        image: { type: "jpeg", quality: 1 },
         html2canvas: {
             scale: 2,
             useCORS: true,
             backgroundColor: "#12002e"
         },
-
         jsPDF: {
             unit: "px",
             format: [960, element.scrollHeight],

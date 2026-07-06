@@ -14,6 +14,7 @@
     <button onclick="saveCopy()">💾 Save Version</button>
     <button onclick="loadVersion()">📂 Load Version</button>
     <button onclick="exportPDF()">📄 Export PDF</button>
+    <button onclick="toggleEditMode()">✏️ Toggle Edit Mode</button>
 </div>
 
 <div class="page">
@@ -63,11 +64,19 @@
 <p>Date here</p>
 </div>
 
-<div>
-<label>Venue</label>
-<p> location here </p>
-</div>
+<div class="venue-section">
+<label>  Venue</label>
 
+    <p class="venue-text" contenteditable="true">
+Venue name here
+    </p>
+
+    <a class="map-link venue-link"
+       href="https://maps.google.com"
+       target="_blank">
+        View Venue
+    </a>
+</div>
 <div>
 <label>Youth Session</label>
 <p>time here</p>
@@ -138,7 +147,7 @@
 
     <div class="role-header">
         <span class="role-icon">👑</span>
-        Meetup Lead - To ensure Upshot register is completed following the session
+        Meetup Lead - Overall responsibility for safe running of session and completion of Upshot register and session notes
     </div>
 
     <div class="staff-name">
